@@ -1,0 +1,31 @@
+#!/bin/bash
+
+
+case $1 in
+        CREATE)
+                echo "Ingrese la ruta donde ha dejado el archivo json con las credenciales: "
+                read varGCP
+                export GOOGLE_APPLICATION_CREDENTIALS=$varGCP
+
+                while [$rep = ""]
+                do
+                        echo "Ingrese la url del repositorio git: "
+                read rep
+                done
+
+                git clone $rep
+
+                terraform init
+                terraform apply
+
+        ;;
+        DESTROY)
+                terraform destroy -force
+        ;;
+        OUTPUT)
+                terraform show
+        ;;
+        *)
+                echo "Ingresar solamente CREATE, DESTROY u OUTPUT"
+
+esac

@@ -1,0 +1,16 @@
+provider "aws" {
+    region = "sa-east-1"
+    access_key = "XXXXXXXXXXXXXXXX"
+    secret_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+}
+
+resource "aws_instance" "test" {
+    ami = "ami-08650d41efe916525"
+    instance_type = "t2.micro"
+}
+
+resource "aws_vpc" "main1" {
+    cidr_block = "10.0.0.0/16"
+}
+
+

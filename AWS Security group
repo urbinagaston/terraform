@@ -13,7 +13,7 @@ resource "aws_sevurity_group" "sg_1" {
     ingress {
         from_port = -1
         to_port = -1
-        protocol = icmp
+        protocol = "icmp"
         cidr_block = ["0.0.0.0/0"]
     }
 

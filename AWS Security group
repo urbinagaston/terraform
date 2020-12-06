@@ -1,0 +1,30 @@
+resource "aws_sevurity_group" "sg_1" {
+    name = "sg_ping_ssh"
+    description = "Permitir ping y ssh"
+    vpc_id = "$(aws.vpc.main1.id)"
+
+    ingress {
+        from_port = 22
+        to_port = 22
+        protocol = "tcp"
+        cidr_block = ["0.0.0.0/0"]
+    }
+
+    ingress {
+        from_port = -1
+        to_port = -1
+        protocol = icmp
+        cidr_block = ["0.0.0.0/0"]
+    }
+
+    egress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_block = ["0.0.0.0/0"]
+    }
+
+    tags = {
+        Name = "Ping y SSH"
+    }
+}

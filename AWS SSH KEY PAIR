@@ -1,0 +1,13 @@
+Crear llave ssh key sin parphrase
+
+ssh-keygen -m pem -b 4096 -f class_key.pem
+
+resource "aws_key_pair" "key_class1" {
+    key_name = "class_key1"
+    public_key = "paste_your_key"
+}
+
+resource "aws_key_pair" "key_class2" {
+    key_name =  "class_key2"
+    public_key = "${file("archivo.pem.pub")}"
+}

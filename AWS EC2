@@ -1,0 +1,7 @@
+resource "aws_instance" "server1" {
+    ami = "ami-079b1541b6dc958ca"
+    instance_type = "t2.micro"
+    count = 1
+    #subnet_id = "subnet_id"
+    subnet_id = "${aws_subnet_subnet1.id}"
+}

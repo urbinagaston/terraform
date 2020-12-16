@@ -5,3 +5,81 @@ resource "aws_instance" "server1" {
     #subnet_id = "subnet_id"
     subnet_id = "${aws_subnet_subnet1.id}"
 }
+
+
+resource "aws_instance" "server1" {
+    ami = "ami-079b1541b6dc958ca"
+    instance_type = "t2.micro"
+    count = 1
+    #subnet_id = "subnet_id"
+    subnet_id = "${aws_subnet_subnet1.id}"
+    associate_public_ip_address = true
+    vpc_security_group_ids = ["sg-id-example", "sg-id-example1"]
+
+    tags = {
+        Name = "Server1"
+        Owner = "terraform"
+        Env = "dev"
+    }
+}
+
+
+resource "aws_instance" "server1" {
+    ami = "ami-079b1541b6dc958ca"
+    instance_type = "t2.micro"
+    count = 1
+    #subnet_id = "subnet_id"
+    subnet_id = "${aws_subnet_subnet1.id}"
+    associate_public_ip_address = true
+    vpc_security_group_ids = ["${aws_security_group.sg_1.id}", "${aws_security_group.sg_2.id}"]
+
+    tags = {
+        Name = "Server1"
+        Owner = "terraform"
+        Env = "dev"
+    }
+}
+
+
+Ip privada específica
+
+resource "aws_instance" "server1" {
+    ami = "ami-079b1541b6dc958ca"
+    instance_type = "t2.micro"
+    count = 1
+    #subnet_id = "subnet_id"
+    subnet_id = "${aws_subnet_subnet1.id}"
+    associate_public_ip_address = true
+    vpc_security_group_ids = ["sg-id-example", "sg-id-example1"]
+    private_ip = "10.0.10.10"
+
+    tags = {
+        Name = "Server1"
+        Owner = "terraform"
+        Env = "dev"
+    }
+}
+
+
+Definir key_name ssh
+Permisos del archivo pem 400 o 600
+
+
+resource "aws_instance" "server1" {
+    ami = "ami-079b1541b6dc958ca"
+    instance_type = "t2.micro"
+    count = 1
+    #subnet_id = "subnet_id"
+    subnet_id = "${aws_subnet_subnet1.id}"
+    associate_public_ip_address = true
+    vpc_security_group_ids = ["sg-id-example", "sg-id-example1"]
+    private_ip = "10.0.10.10"
+    key_name = "class_key1"
+
+    tags = {
+        Name = "Server1"
+        Owner = "terraform"
+        Env = "dev"
+    }
+}
+

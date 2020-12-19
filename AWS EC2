@@ -4,15 +4,6 @@ resource "aws_instance" "server1" {
     count = 1
     #subnet_id = "subnet_id"
     subnet_id = "${aws_subnet_subnet1.id}"
-}
-
-
-resource "aws_instance" "server1" {
-    ami = "ami-079b1541b6dc958ca"
-    instance_type = "t2.micro"
-    count = 1
-    #subnet_id = "subnet_id"
-    subnet_id = "${aws_subnet_subnet1.id}"
     associate_public_ip_address = true
     vpc_security_group_ids = ["sg-id-example", "sg-id-example1"]
 
@@ -64,6 +55,7 @@ resource "aws_instance" "server1" {
 Definir key_name ssh
 Permisos del archivo pem 400 o 600
 
+para conectarse ssh -l ec2-user ip_o_dominio -i key.pem
 
 resource "aws_instance" "server1" {
     ami = "ami-079b1541b6dc958ca"
@@ -83,3 +75,21 @@ resource "aws_instance" "server1" {
     }
 }
 
+
+resource "aws_instance" "server2" {
+    ami = "ami-079b1541b6dc958ca"
+    instance_type = "t2.micro"
+    count = 1
+    #subnet_id = "subnet_id"
+    subnet_id = "${aws_subnet_subnet1.id}"
+    associate_public_ip_address = true
+    vpc_security_group_ids = ["sg-id-example", "sg-id-example1"]
+    private_ip = "10.0.10.20"
+    key_name = "${aws_key_pair.key-class2.id}"
+
+    tags = {
+        Name = "Server2"
+        Owner = "terraform"
+        Env = "dev"
+    }
+}

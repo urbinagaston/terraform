@@ -1,0 +1,260 @@
+DEFINICIÓN DE VARIABLES PARTE 1 
+
+OUTPUT
+
+Las variables de entrada sirven como parámetro para un módulo terraform, permitiendo que los aspectos del módulo se personalicen sin alterar el código fuente del módulo,
+y permitiendo que los módulos se compartan entre diferentes configuraciones.
+Al ejecutar el terraform plan y la variable no tener un valor, se va a solicitar el valor de la variable para poder ejecutar la tarea.
+
+
+EJEMPLO 1
+Se crea el archivo variables.tf
+
+#variables.tf
+variable "ami_id" {
+    description = "ami id para RHEL 8"
+    type = string
+
+}
+
+#Archivo userdata.sh
+#/bin/bash
+export PATH=$PATH:/usr/local/bin
+sudo -i
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+yum install -y httpd
+echo "<html><h1>Hola, Excelente ejercicio......<p></p><p>Continuamos!!!</p></h1></html>" > /var/www/html/index.html
+systemctl enable httpd
+systemctl start httpd
+echo "Hola mundo" > hola.txt
+
+#ec2_instance.tf
+resource "aws_instance" "server1" {
+    ami = "${var.ami_id}"
+    instance_type = "t2.micro"
+    count = 1
+    #subnet_id = "subnet_id"
+    subnet_id = "${aws_subnet_subnet1.id}"
+    associate_public_ip_address = true
+    vpc_security_group_ids = ["sg-id-example", "sg-id-example1"]
+    private_ip = "10.0.10.10"
+    key_name = "class_key1"
+    user_data = "${file("userdata.sh")}"
+    tags = {
+        Name = "Server1"
+        Owner = "terraform"
+        Env = "dev"
+    }
+}
+
+
+#ejecutar = terraform plan -var="ami_id=ami-079b1541b6dc958ca"
+
+
+
+EJEMPLO 2
+
+#Comentamos type y agregamos default en variables.tf
+
+#variables.tf
+variable "ami_id" {
+    description = "ami id para RHEL 8"
+    #type = string
+    default = "ami-079b1541b6dc958ca"
+}
+
+#Archivo userdata.sh
+#/bin/bash
+export PATH=$PATH:/usr/local/bin
+sudo -i
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+yum install -y httpd
+echo "<html><h1>Hola, Excelente ejercicio......<p></p><p>Continuamos!!!</p></h1></html>" > /var/www/html/index.html
+systemctl enable httpd
+systemctl start httpd
+echo "Hola mundo" > hola.txt
+
+#ec2_instance.tf
+resource "aws_instance" "server1" {
+    ami = "${var.ami_id}"
+    instance_type = "t2.micro"
+    count = 1
+    #subnet_id = "subnet_id"
+    subnet_id = "${aws_subnet_subnet1.id}"
+    associate_public_ip_address = true
+    vpc_security_group_ids = ["sg-id-example", "sg-id-example1"]
+    private_ip = "10.0.10.10"
+    key_name = "class_key1"
+    user_data = "${file("userdata.sh")}"
+    tags = {
+        Name = "Server1"
+        Owner = "terraform"
+        Env = "dev"
+    }
+}
+
+
+#ejecutar = terraform plan (Pero sin pasar variable porque ya se encuentra configurada)
+
+
+
+
+EJEMPLO 3
+
+
+
+#variables.tf
+variable "region" {
+    description = "Region a utilizar en aws"
+    #type = string
+    default = "sa-east-1"
+}
+
+variable "vpc_cidr" {
+    description = "VPC cidr"
+    #type = string
+    default = "10.0.10.0/16"
+}
+
+
+variable "subnet1_cidr" {
+    description = "Subnet1 VPC cidr"
+    #type = string
+    default = "10.0.10.0/24"
+}
+
+variable "subnet1_zone_1b" {
+    description = "Zona 1b Subnet1"
+    #type = string
+    default = "sa-east-1b"
+}
+
+
+variable "ami_id" {
+    description = "ami id para RHEL 8"
+    #type = string
+    default = "ami-079b1541b6dc958ca"
+}
+
+#Archivo userdata.sh
+#/bin/bash
+export PATH=$PATH:/usr/local/bin
+sudo -i
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+yum install -y httpd
+echo "<html><h1>Hola, Excelente ejercicio......<p></p><p>Continuamos!!!</p></h1></html>" > /var/www/html/index.html
+systemctl enable httpd
+systemctl start httpd
+echo "Hola mundo" > hola.txt
+
+#ec2_instance.tf
+resource "aws_instance" "server1" {
+    ami = "${var.ami_id}"
+    instance_type = "t2.micro"
+    count = 1
+    #subnet_id = "subnet_id"
+    subnet_id = "${aws_subnet_subnet1.id}"
+    associate_public_ip_address = true
+    vpc_security_group_ids = ["sg-id-example", "sg-id-example1"]
+    private_ip = "10.0.10.10"
+    key_name = "class_key1"
+    user_data = "${file("userdata.sh")}"
+    tags = {
+        Name = "Server1"
+        Owner = "terraform"
+        Env = "dev"
+    }
+}
+
+#provider.tf
+provider "aws" {
+    region = "${var.region}"
+    access_key = "XXXXXXXXXXXXXXXXXXXXX"
+    secret_key = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+}
+
+#resource "aws_instance" "test" {
+#    ami = "ami-08650d41efe916525"
+#    instance_type = "t2.micro"
+#}
+
+resource "aws_vpc" "main1" {
+    cidr_block = "${var.vpc_cidr}"
+    enable_dns_hostnames = true
+
+    tags = {
+        Name = "Mani VPC 1"
+    }
+}
+
+resource "aws_subnet" "subnet1" {
+    vpc_id = aws_vpc.main1.id
+    cidr_block = "${var.subnet1_cidr}"
+    map_public_ip_on_launch = true
+}
+
+resource "aws_subnet" "subnet2" {
+    vpc_id = aws_vpc.main1.id
+    cidr_block = "10.0.20.0/24"
+    map_public_ip_on_launch = true
+    availability_zone = "${var.subnet1_zone_1b}"
+}
+
+
+
+DEFINICION DE VARIABLES PARTE 3
+
+
+#Crear archivo de variable con extensión .tfvars y comentamos todas las líneas de default
+
+
+#all_vars.tfvars
+variable "region" {
+    description = "Region a utilizar en aws"
+    #type = string
+    #default = "sa-east-1"
+}
+
+variable "vpc_cidr" {
+    description = "VPC cidr"
+    #type = string
+    #default = "10.0.10.0/16"
+}
+
+
+variable "subnet1_cidr" {
+    description = "Subnet1 VPC cidr"
+    #type = string
+    #default = "10.0.10.0/24"
+}
+
+variable "subnet1_zone_1b" {
+    description = "Zona 1b Subnet1"
+    #type = string
+    #default = "sa-east-1b"
+}
+
+
+variable "ami_id" {
+    description = "ami id para RHEL 8"
+    #type = string
+    #default = "ami-079b1541b6dc958ca"
+}
+
+#Si ejecuto esto como terraform plan, me va a consultar pot todas las varibles para poder continuar.
+#Ahora hacemos lo siguiente:
+
+
+
+#all_vars.tfvars
+region          = "sa-east-1"
+vpc_cidr        = "10.0.10.0/16"
+subnet1_cidr    = "10.0.10.0/24"
+subnet1_zone_1b = "sa-east-1b"
+ami_id          = "ami-079b1541b6dc958ca"
+
+#Ahora si ejecutamos terraform plan -var-file all_vars.tfvars (Para que tome el archivo de variables y no nos consulte por cada uno)
+#Para aplicar los cambios terraform plan -var-file all_vars.tfvars -auto-approve
+
+
+

@@ -1,0 +1,57 @@
+#En este ejemplo utilizamos count para crear más instancias, pero el name no cambiaría.
+#Entonces para este caso se puede utilizar un count index para el name del server. Comenzaría a contar desde el 0.
+#generando el name como server-0, server-1, server-2. Se le puede agregar un +1 para que sea 1, 2 y 3.
+
+
+resource "aws_instance" "server1" {
+    ami = "ami-079b1541b6dc958ca"
+    instance_type = "t2.micro"
+    count = 3
+    #subnet_id = "subnet_id"
+    subnet_id = "${aws_subnet_subnet1.id}"
+    associate_public_ip_address = true
+    vpc_security_group_ids = ["sg-id-example", "sg-id-example1"]
+    #private_ip = "10.0.10.20"
+    key_name = "${aws_key_pair.key-class1.id}"
+
+    tags = {
+        Name = "Server-${count.index}"
+        Owner = "terraform"
+        Env = "dev"
+    }
+}
+
+
+OBJETIVO ES DARLE UNA IP A CADA SERVER UTILIZANDO LAS VARIABLES
+
+
+
+resource "aws_instance" "server1" {
+    ami = "ami-079b1541b6dc958ca"
+    instance_type = "t2.micro"
+    #count = 3
+    count = "${length(var.subnet1_private_ip)}"
+    #subnet_id = "subnet_id"
+    subnet_id = "${aws_subnet_subnet1.id}"
+    associate_public_ip_address = true
+    vpc_security_group_ids = ["sg-id-example", "sg-id-example1"]
+    private_ip = "${element(var.subnet1_private_ip, count.index)}"
+    key_name = "${aws_key_pair.key-class1.id}"
+
+    tags = {
+        Name = "Server-${count.index}"
+        Owner = "terraform"
+        Env = "dev"
+    }
+}
+
+
+###############################################################################
+
+
+
+variable "subnet1_private_ip" {
+    description = "Lista de ip para subnet 1"
+    type = "list"
+    default = ["192.168.10.10", "192.168.10.20", "192.168.10.30"]
+}

@@ -24,6 +24,7 @@ resource "aws_instance" "server1" {
 
 #33-OBJETIVO ES DARLE UNA IP A CADA SERVER UTILIZANDO LAS VARIABLES
 #Trabajamos con lista de elementos, creamos una lista de elementos para las direcciones ip y luego las accedemos con element(var.xxxx)
+#De esta forma ahora tenemos la cantidad de servers de acuerdo a la lista de elementos de direcciones ip.
 
 
 

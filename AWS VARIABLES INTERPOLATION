@@ -1,4 +1,4 @@
-#En este ejemplo utilizamos count para crear más instancias, pero el name no cambiaría.
+#32-En este ejemplo utilizamos count para crear más instancias, pero el name no cambiaría.
 #Entonces para este caso se puede utilizar un count index para el name del server. Comenzaría a contar desde el 0.
 #generando el name como server-0, server-1, server-2. Se le puede agregar un +1 para que sea 1, 2 y 3.
 

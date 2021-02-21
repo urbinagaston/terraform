@@ -1,0 +1,87 @@
+#36 - Aquí agregmos gateways, tabla de enrutamiento y asociación para cada subnet.
+#### main.tf
+
+#Información proveedor
+provider "aws" {
+    region = "${var.region}"
+}
+
+#Creamos un vpc
+resource "aws_vpc" "main1" {
+    cidr_block = "${var.vpc_cidr}"
+    instance_tenancy = "default"
+    enable_dns_hostnames = "true"
+
+    tags = {
+        Name = "Main1"
+        Location = "US"
+    }
+}
+
+#Creamosla subnet
+resource "aws_subnet" "subnets" {
+    #count = "${lenght(var.azs_list)}"
+    #availability_zone = "${element(var.azs_list, count.index)}"
+    count = "${lenght(data.aws_availability_zones.azs.names)}"
+    availability_zone = "${element(data.aws_availability_zone.azs.names, count.index)}"
+    vpc_id = "${aws_vpc.main1.id}"
+    cidr_block = "${element(var.subnet_cidr, count.index)}"
+
+    tags = {
+        Name = "Subnet-${count.index +1}"
+    }
+}
+
+
+resource "aws_internet_gateway" "gw" {
+    vpc_id = "${aws_vpc.main1.id}"
+
+    tags = {
+        Name = "VPC Main"
+    }
+}
+
+
+resource "aws_route_table" "web-public-rt" {
+    vpc_id = "${aws_vpc.main1.id}"
+
+    route {
+        cidr_block = "0.0.0.0/0"
+    }
+
+    tags = {
+        Name = "Public subnet RT"
+    }
+}
+
+
+resource "aws_route_table_association" "public_subnet" {
+    count = "${length(var.subnet_cidr)}"
+    subnet_id = "${element(aws_subnet.subnets.*.id, count.index)}"
+    route_table_id = "${aws_route_table.web-public-rt.id}"
+}
+
+
+##### variables.tf
+
+variable "region" {
+    default = "us-east-2"
+}
+
+variable "vpc_cidr" {
+    default = "192.168.0.0/16"
+}
+
+
+variable "subnet_cidr" {
+    type = "list"
+    default = ["192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24"]
+}
+
+variable "azs_list" {
+    type = "list"
+    default = ["us-east-2a", "us-east-2b", "us-east-2c"]
+}
+
+data "aws_availability_zones" "azs" {}
+

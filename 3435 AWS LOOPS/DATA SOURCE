@@ -26,7 +26,7 @@ resource "aws_vpc" "main1" {
 resource "aws_subnet" "subnets" {
     #count = "${lenght(var.azs_list)}"
     count = "${lenght(data.aws_availability_zones.azs.names)}"
-    availability_zone = "${element(data.aws_availability_zone.azs, count.index)}"
+    availability_zone = "${element(data.aws_availability_zone.azs.names, count.index)}"
     #availability_zone = "${element(var.azs_list, count.index)}"
     vpc_id = "${aws_vpc.main1.id}"
     cidr_block = "${element(var.subnet_cidr, count.index)}"

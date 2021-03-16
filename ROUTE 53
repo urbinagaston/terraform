@@ -1,0 +1,305 @@
+###ec2.tf
+
+resource "aws_instance" "server1" {
+    ami = "ami-0520e698dd500b1d1"
+    instance_type = "t2.micro"
+    vpc_security_group_ids = ["${aws_security_group.route_allow_http_ssh.id}"]
+    subnet_id = "${aws_subnet.subnet1.id}"
+    association_public_ip_address = true
+    private_ip = "192.168.10.11"
+    key_name = "${aws_key_pair.sample_key_name.id}"
+    depends_on = ["aws_internet_gateway.gw"]
+    user_data = "${file("userdata1.sh")}"
+    tags = {
+        Name = "Server1"
+        Env = "dev"
+    }
+}
+
+
+resource "aws_instance" "server2" {
+    ami = "ami-0520e698dd500b1d1"
+    instance_type = "t2.micro"
+    vpc_security_group_ids = ["${aws_security_group.route_allow_http_ssh.id}"]
+    subnet_id = "${aws_subnet.subnet1.id}"
+    association_public_ip_address = true
+    private_ip = "192.168.10.12"
+    key_name = "${aws_key_pair.sample_key_name.id}"
+    depends_on = ["aws_internet_gateway.gw"]
+    user_data = "${file("userdata2.sh")}"
+    tags = {
+        Name = "Server2"
+        Env = "dev"
+    }
+}
+
+###userdatas1.sh
+
+#!/bin/bash
+export PATH=$PATH:/usr/local/bin
+sudo -i
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+yum install -y httpd curl bind-utils
+echo "<html><h1>Hola, Excelente ejercicio"<p></p><p>Continuamos!!!</h1></html> >/
+systemctl start httpd
+sleep 60
+
+#for ((i=1;i<=5;i++)); do curl -v "http://mylb.dev.usuarioroot.com" >> /var/www/html/index.html
+
+systemctl restart httpd
+systemctl enable httpd
+
+
+###userdatas2.sh
+
+#!/bin/bash
+export PATH=$PATH:/usr/local/bin
+sudo -i
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+yum install -y httpd curl bind-utils
+echo "<html><h1>Hola, Excelente ejercicio 2"<p></p><p>Continuamos!!!</h1></html> >/
+systemctl start httpd
+sleep 60
+
+#for ((i=1;i<=5;i++)); do curl -v "http://mylb.dev.usuarioroot.com" >> /var/www/html/index.html
+
+systemctl restart httpd
+systemctl enable httpd
+
+
+
+###vpc_subnet.tf
+
+#Información proveedor
+provider "aws" {
+    region = "${var.region}"
+}
+
+#Creamos un vpc
+resource "aws_vpc" "main1" {
+    cidr_block = "${var.vpc_cidr}"
+    instance_tenancy = "default"
+    enable_dns_hostnames = "true"
+
+    tags = {
+        Name = "Main1"
+        Location = "US"
+    }
+}
+
+
+resource "aws_subnet" "subnet1" {
+    availability_zone = "us_east_2a"
+    vpc_id = "${aws_vpc.main1.id}"
+    cidr_block = "192.168.10.0/24"
+
+    tags = {
+        Name = "Subnet-1"
+    }
+}
+
+resource "aws_subnet" "subnet2" {
+    availability_zone = "us_east_2b"
+    vpc_id = "${aws_vpc.main1.id}"
+    cidr_block = "192.168.20.0/24"
+
+    tags = {
+        Name = "Subnet-2"
+    }
+}
+
+resource "aws_subnet" "subnet3" {
+    availability_zone = "us_east_2c"
+    vpc_id = "${aws_vpc.main1.id}"
+    cidr_block = "192.168.30.0/24"
+
+    tags = {
+        Name = "Subnet-3"
+    }
+}
+
+
+
+resource "aws_internet_gateway" "gw" {
+    vpc_id = "${aws_vpc.main1.id}"
+    
+    tags = {
+        Name = "VPC Main"
+    }
+}
+
+
+resource "aws_route_table" "web-public-rt" {
+    vpc_id = "${aws_vpc.main1.id}"
+    
+    route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = "${aws_internet_gateway.gw.id}"
+    }
+    
+    tags = {
+        Name = "Public Subnet RT"
+    }
+}
+
+
+resource "aws_route_table_asociation" "public-subnet1" {
+    subnet_id = "${aws_subnet.subnet1.id}"
+    route_table_id = "${aws_route_table.web-public-rt.id}"
+}
+
+resource "aws_route_table_asociation" "public-subnet2" {
+    subnet_id = "${aws_subnet.subnet2.id}"
+    route_table_id = "${aws_route_table.web-public-rt.id}"
+}
+
+resource "aws_route_table_asociation" "public-subnet3" {
+    subnet_id = "${aws_subnet.subnet3.id}"
+    route_table_id = "${aws_route_table.web-public-rt.id}"
+}
+
+
+#####variables.tf
+
+variable "region" {
+    default = "us-east-2"
+}
+
+variable "vpc_cidr" {
+    default = "192.168.0.0/16"
+}
+
+
+variable "subnet_cidr" {
+    type = "list"
+    default = ["192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24"]
+}
+
+variable "azs_list" {
+    type = "list"
+    default = ["us-east-2a", "us-east-2b", "us-east-2c"]
+}
+
+data "aws_availability_zones" "azs" {}
+
+
+
+
+
+###security_groups.tf
+
+
+resource "aws_security_group" "route_allow_http_ssh" {
+    name = "route53_allow_ping_ssh_apache"
+    vpc_id = "${aws_vpc.main1.id}"
+    
+    ingress {
+        from_port = 80
+        to_port = 80
+        protocol = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    
+    
+    ingress {
+        from_port = 22
+        to_port = 22
+        protocol = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    
+    ingress {
+        from_port = -1
+        to_port = -1
+        protocol = "icmp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    
+    engress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+}
+
+
+
+###ssh_keys.tf
+
+resource "aws_key_pair" "smple_key_name" {
+    key_name = "sample_key"
+    public_key = "${file("class_key.pem.pub")}"
+             
+}
+
+
+###route53.tf
+
+resource "aws_route53_zone" "dev" {
+    name = "dev.usuarioroot.com"
+    force_destroy = false
+    
+    vpc {
+        vpc_id = "aws_vpc_main1.id"
+    }
+}
+
+
+resource "aws_route53_record" "server1" {
+    zone_id = "${aws_route53_zone.dev.zone_id}"
+    name = "server1.dev.usuarioroot.com"
+    type = "A"
+    ttl = "300"
+    records = ["${aws_instance.server1.private_ip}"]
+}
+
+resource "aws_route53_record" "server2" {
+    zone_id = "${aws_route53_zone.dev.zone_id}"
+    name = "server2.dev.usuarioroot.com"
+    type = "A"
+    ttl = "300"
+    records = ["${aws_instance.server2.private_ip}"]
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

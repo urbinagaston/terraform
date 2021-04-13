@@ -1,0 +1,36 @@
+###lookup - Variables tipo map para elegir más de una opción dentro de la misma variable, similar a una lista y elige un valor dependiendo del key.
+
+######provider.tf
+
+provider "aws" {
+    region = "${var.region}"
+}
+
+
+
+######variables.tf
+
+variable "region" {
+    default = "us-east-2"
+}
+
+variable "ec2_ami" {
+    type = "map"
+    default = {
+        us-east-2 = "ami-east00999999888888aaa"
+        us-west-2 = "ami-west00999999888888aaa"
+    }
+}
+
+
+######ec2.tf
+
+resource "aws_instance" "web1" {
+    #ami = "${var.ec2_ami}"
+    ami = "${lookup(var.ec2_ami, var.region)}"
+    instance_type = "t2.micro"
+    
+    tags = {
+        Name = "web1"
+    }
+}
